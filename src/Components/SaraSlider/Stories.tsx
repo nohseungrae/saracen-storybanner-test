@@ -1,45 +1,53 @@
-import React, {useEffect, useState} from "react";
-import StorySlider from "./StorySlider";
-import {DataUtil} from "./DataUtil";
-import {
-    clearAllBodyScrollLocks,
-    disableBodyScroll,
-    enableBodyScroll,
-} from "body-scroll-lock";
-import styled from "styled-components";
+import React, { useEffect, useRef, useState } from 'react';
+import StorySlider from './StorySlider';
+import { DataUtil, imgPathFunc, mappingType } from './DataUtil';
+import { clearAllBodyScrollLocks, disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
+import styled from 'styled-components';
+import { isMobile, isIE } from 'react-device-detect';
+
+interface ISProps {
+    isMobile: boolean;
+}
 
 const StoryMain = styled.div`
-  display: block;
-  overflow-x: auto;
-  width: 100%;
+    display: flex;
+    overflow-x: auto;
+    max-width: 100%;
+    margin: auto;
+    -ms-overflow-style: none;
 `;
-const SaraStory1 = styled.ul`
-  display: flex;
-  width: max-content;
+const SaraStory1 = styled.ul<ISProps>`
+    display: flex;
+    ${(props) => (props.isMobile ? { padding: ' 0 3% 3% 3%' } : { padding: '30px 0 30px 40px', margin: 'auto' })};
+    justify-content: center;
+    flex-grow: 1;
 `;
-const SaraLi = styled.li`
-  width: 200px;
-  margin-right: 10px;
-  position: relative;
-  display: block;
-  img {
-    width: 100%;
+const SaraLi = styled.li<ISProps>`
+    ${(props) => (props.isMobile ? { width: '125px' } : { height: '350px' })};
+    width: 194px;
+    margin-right: 10px;
+    position: relative;
     border-radius: 0.7em;
-    height: 100%;
-  }
+    display: block;
+    background-color: ${(props) => props.color};
+    img {
+        width: 100%;
+        border-radius: 0.7em;
+        height: 100%;
+    }
 `;
 const Overlay = styled.img`
-  position: absolute;
-  bottom: 0;
-  z-index: 1;
+    position: absolute;
+    bottom: 0;
+    z-index: 1;
 `;
 const Span = styled.span`
-  position: absolute;
-  bottom: 15px;
-  width: 100%;
-  z-index: 2;
-  text-align: center;
-  color: #fff;
+    position: absolute;
+    bottom: 15px;
+    width: 100%;
+    z-index: 2;
+    text-align: center;
+    color: #fff;
 `;
 
 export interface IStory {
@@ -51,11 +59,11 @@ export interface IStory {
     createdAt?: string | Date;
     id?: number;
     img?: string;
-    mainCopy?: string;
+    main_copy?: string;
     miniImg?: null;
-    relationId?: number;
+    relation_id?: number;
     seq?: number;
-    subCopy?: string;
+    sub_copy?: string;
     type?: string;
     updatedAt?: string | Date;
     url?: string;
@@ -68,95 +76,149 @@ interface IProps {
     stories: IStory[];
     groupedStories?: any[];
     targetElement?: null | string;
+    imgDomain: string;
+    imgLegacy: string;
 }
 
-const Stories: React.FunctionComponent<IProps> = ({stories}) => {
+interface ICompare {
+    seq: number;
+    id: string;
+}
+export const checkVideoImg = (img: string, story: any) => {
+    const mimeTypes = ['avi', 'mov', 'mp4', 'm4v', 'mpeg', 'mpg', 'oga', 'ogg', 'ogv', 'webm', 'wmv'];
+    const mapping = mappingType(img) as { mimeType: string; name: string };
+    if (mimeTypes.includes(mapping?.mimeType)) {
+        return (
+            <video controlsList="nodownload" muted autoPlay playsInline loop style={{ width: '100%', height: '100%' }} src={img}></video>
+        );
+    }
+    return <img src={img} onError={(e: any) => imgPathFunc.solveImgError(e, story)} alt={story.alt} />;
+};
+export const compare = (a: ICompare, b: ICompare) => {
+    const relationA = a.seq;
+    const relationB = b.seq;
+    let comparison = 0;
+    if (relationA === relationB) {
+        if (parseInt(a.id) > parseInt(b.id)) {
+            // console.log("비교중")
+            comparison = 1;
+        } else if (parseInt(a.id) < parseInt(b.id)) {
+            // console.log("비교중2")
+            comparison = -1;
+        }
+        return comparison;
+    }
+
+    if (relationA > relationB) {
+        comparison = 1;
+    } else if (relationA < relationB) {
+        comparison = -1;
+    }
+    return comparison;
+};
+
+const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegacy }) => {
+    const elRef = useRef(null);
+    const useHorizontalScroll = () => {
+        useEffect(() => {
+            const el: any = elRef.current;
+            if (el) {
+                const onWheel = (e: any) => {
+                    e.preventDefault();
+                    if (!isIE) {
+                        return el?.scrollTo({
+                            left: el?.scrollLeft + e.deltaY,
+                        });
+                    }
+                    $(el).scrollLeft(el?.scrollLeft + e.deltaY);
+                };
+                el?.addEventListener('wheel', onWheel);
+                return () => el?.removeEventListener('wheel', onWheel);
+            }
+        }, []);
+        return elRef;
+    };
     const [targetEl, setTargetEl] = useState<HTMLElement | null>(null);
 
     const [state, setState] = useState({
-        displayState: "none",
-        slides: "",
+        displayState: 'none',
+        slides: '',
         index: 0,
         stories: [] as IStory[],
         groupedStories: [] as any[],
         targetElement: null,
     });
+    const [check, setCheck] = useState(false);
 
     const handleOpenStory = (e: any, i: number) => {
         e.preventDefault();
         const parsedIndex = i;
-        const body: HTMLBodyElement | null = document.querySelector(
-            "body"
-        ) as HTMLBodyElement;
-        console.log(body, parsedIndex);
-        body.style.overflowY = "hidden";
+        const body: HTMLBodyElement | null = document.querySelector('body') as HTMLBodyElement;
+        // console.log(body, parsedIndex);
+        body.style.overflowY = 'hidden';
         setState({
             ...state,
-            displayState: "block",
+            displayState: 'block',
             index: parsedIndex,
         });
+        setCheck(true);
         disableBodyScroll(targetEl as HTMLElement);
     };
 
     const handleCloseStory = () => {
-        const body: HTMLElement | null = document.querySelector(
-            "body"
-        ) as HTMLBodyElement;
-        body.style.overflowY = "auto";
+        const body: HTMLElement | null = document.querySelector('body') as HTMLBodyElement;
+        body.style.overflowY = 'auto';
         setState({
             ...state,
-            displayState: "none",
+            displayState: 'none',
         });
+        setCheck(false);
         enableBodyScroll(targetEl as HTMLElement);
     };
 
     useEffect(() => {
-        setTargetEl(document.querySelector("body") as HTMLBodyElement);
-        if (stories?.length > 0) {
-            console.log("여기봐라");
-            setState({
-                ...state,
-                displayState: "none",
-                slides: "",
-                index: 0,
-                stories: stories,
-                groupedStories: DataUtil.jsonListGroupBy(stories, "seq")
-                    .map((item: any) =>
-                        item.sort(() => {
-                            return Math.random() - Math.random();
-                        })
-                    )
-                    .flatMap((item: any) => item),
-                targetElement: null,
-            });
-        }
+        setTargetEl(document.querySelector('body') as HTMLBodyElement);
         return () => clearAllBodyScrollLocks();
     }, [targetEl]);
 
+    useEffect(() => {
+        if (stories?.length > 0) {
+            setState({
+                ...state,
+                displayState: 'none',
+                slides: '',
+                index: 0,
+                stories: stories,
+                groupedStories: DataUtil.jsonListGroupBy(stories, 'seq')
+                    .flatMap((item: any) => item)
+                    .sort(compare),
+                targetElement: null,
+            });
+        }
+    }, [stories]);
+
+    useHorizontalScroll();
+
     return (
         <>
-            <StorySlider
-                stories={state.groupedStories}
-                CloseStory={handleCloseStory}
-                display={state.displayState}
-                index={state.index}
-            />
-            <StoryMain className="story">
-                <SaraStory1 style={{padding: "0"}}>
+            {state?.displayState === 'none' ? null : (
+                <StorySlider
+                    stories={state.groupedStories}
+                    CloseStory={handleCloseStory}
+                    display={state.displayState}
+                    index={state.index}
+                    check={check}
+                    imgDomain={imgDomain}
+                    imgLegacy={imgLegacy}
+                />
+            )}
+            <StoryMain className="story" ref={elRef}>
+                <SaraStory1 isMobile={isMobile}>
                     {state.groupedStories.map((story: any, i) => (
-                        <SaraLi key={i} onClick={(e) => handleOpenStory(e, i)}>
+                        <SaraLi color={story.color} isMobile={isMobile} key={i} onClick={(e) => handleOpenStory(e, i)}>
                             <Span>{story.alt}</Span>
-                            <Overlay
-                                className="overlay"
-                                src={`${process.env.REACT_APP_ABSOLUTE_HOST}static/m/images/story_overlay.png`}
-                                alt="overlay"
-                            />
-                            <img
-                                src={`${process.env.REACT_APP_ACTIVE_IMG}img/banner/image/${
-                                    story.relationId + "/" + story.img
-                                }`}
-                                alt={story.alt}
-                            />
+                            <Overlay className="overlay" src={`/static/m/images/story_overlay.png`} alt="overlay" />
+                            {checkVideoImg(imgPathFunc.getImgPath(story, imgDomain, imgLegacy), story)}
                         </SaraLi>
                     ))}
                 </SaraStory1>

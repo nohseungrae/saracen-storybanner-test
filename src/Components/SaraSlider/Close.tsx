@@ -1,17 +1,23 @@
-import React from 'react';
-import styled from "styled-components";
+import React, { useEffect, useState } from 'react';
+import styled from 'styled-components';
+import { isMobile } from 'react-device-detect';
 
-const CloseBox = styled.div`
+interface ISProps {
+    isMobile: boolean;
+}
+
+const CloseBox = styled.div<ISProps>`
     cursor: pointer;
-    position: fixed;
-    left: 0px;
-    top: 0px;
+    ${(props) =>
+        props.isMobile
+            ? { position: 'absolute', right: '0px', top: ' 3px' }
+            : { position: 'fixed', left: '0px', top: '0px', margin: '5px 0 0 5px' }}
     width: 50px;
     height: 50px;
     opacity: 1;
     z-index: 999;
-    margin : 5px 0 0 5px;
-    &:before, &:after {
+    &:before,
+    &:after {
         position: absolute;
         left: 50%;
         top: 25%;
@@ -19,7 +25,7 @@ const CloseBox = styled.div`
         height: 33px;
         width: 2px;
         background-color: #fff;
-        box-shadow: 10px 10px 5px -9px rgba(0,0,0,0.16);
+        box-shadow: 10px 10px 5px -9px rgba(0, 0, 0, 0.16);
     }
     &:before {
         transform: rotate(45deg);
@@ -30,13 +36,32 @@ const CloseBox = styled.div`
 `;
 
 interface IProps {
-    CloseStory: any
+    CloseStory: any;
 }
 
-const Close: React.FunctionComponent<IProps> = ({CloseStory}) => {
-    return (
-        <CloseBox onClick={CloseStory}/>
-    );
+const Close: React.FunctionComponent<IProps> = ({ CloseStory }) => {
+    const [keyPressed, setKeyPressed] = useState(false);
+    const useKeyPress = (targetKey: any) => {
+        // console.log(targetKey)
+
+        document.onkeydown = (evt) => {
+            evt = evt || window.event;
+            if (evt.keyCode === targetKey) {
+                setKeyPressed(true);
+            }
+        };
+        useEffect(() => {
+            setKeyPressed(false);
+        }, [keyPressed]);
+    };
+    useKeyPress(27);
+    useEffect(() => {
+        if (keyPressed) {
+            CloseStory();
+        }
+    }, [keyPressed]);
+
+    return <CloseBox isMobile={isMobile} onClick={CloseStory} />;
 };
 
 export default Close;

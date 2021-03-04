@@ -1,103 +1,104 @@
-import React from "react";
-import Progress from "./Progress";
-import {IStory} from "./Stories";
-import styled from "styled-components";
-import {Links, Open, Title} from "./Keyframes";
+import React from 'react';
+import Progress from './Progress';
+import { checkVideoImg, IStory } from './Stories';
+import styled from 'styled-components';
+import { Links, Open, Title } from './Keyframes';
+import { imgPathFunc } from './DataUtil';
+import { isMobile } from 'react-device-detect';
 
 interface SProps {
     bgColor?: string;
     displayurl?: string;
     href?: string;
+    isMobile?: boolean;
 }
 
 const StoryItem = styled.div<SProps>`
-  background-size: auto 100%;
-  width: 100%;
-  height: 100%;
-  float: left;
-  position: relative;
-  background: ${(props) => props.bgColor};
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 997;
-  animation: ${Open} 0.3s ease-in-out;
-
-  & .story_img {
+    background-size: auto 100%;
     width: 100%;
-    background-size: 100% auto;
-    background-repeat: no-repeat;
-    background-position: center;
-    & img {
-      width: 100%;
+    height: 100%;
+    float: left;
+    position: relative;
+    background: ${(props) => props.bgColor};
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 997;
+    animation: ${Open} 0.3s ease-in-out;
+
+    & .story_img {
+        width: 100%;
+        background-size: 100% auto;
+        background-repeat: no-repeat;
+        background-position: center;
+        & img {
+            width: 100%;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            z-index: 997;
+            background: url(${'/static/m/images/story_overlay.png'}) repeat-x;
+            background-size: auto 100%;
+        }
     }
-    .overlay {
-      position: absolute;
-      top: 0;
-      height: 100%;
-      width: 100%;
-      z-index: 997;
-      background: url(${process.env.REACT_APP_ABSOLUTE_HOST +
-"static/m/images/story_overlay.png"})
-        repeat-x;
-      background-size: auto 100%;
-    }
-  }
 `;
 const StoryFooter = styled.div`
-  position: absolute;
-  bottom: 50px;
-  width: 100%;
-  z-index: 999;
+    position: absolute;
+    bottom: 50px;
+    width: 100%;
+    z-index: 999;
 `;
 
-const StoryTitle = styled.div`
-  display: flex;
-  flex-flow: column wrap;
-  margin-bottom: 60px;
-  padding: 0 15px;
-  color: #fff;
-  transition: margin-bottom, opacity 0.5s linear;
-  &.animation {
-    animation: ${Title} 0.7s linear;
-  }
-  > h2 {
+const StoryTitle = styled.div<SProps>`
+    display: flex;
+    flex-flow: column wrap;
+    margin-bottom: ${(props) => (props.isMobile ? '10px' : '60px')};
+    padding: 0 15px;
     color: #fff;
-    font-size: 1.8em;
-  }
-  > span {
-    margin: 5px 0;
-    color: #ececec;
-    font-size: 1em;
-  }
+    transition: margin-bottom, opacity 0.5s linear;
+    &.animation {
+        animation: ${Title} 0.7s linear;
+    }
+    > h2 {
+        color: #fff;
+        font-size: 1.8em;
+    }
+    > span {
+        margin: 5px 0;
+        color: #ececec;
+        font-size: 1em;
+    }
 `;
 
 const StoryLink = styled.div`
-  transition: margin-bottom, opacity 0.5s ease-out;
-  height: 80px;
-  &.animation {
-    animation: ${Links} 0.5s ease-out;
-  }
+    transition: margin-bottom, opacity 0.5s ease-out;
+    height: 80px;
+    &.animation {
+        animation: ${Links} 0.5s ease-out;
+    }
 `;
 const A = styled.a<SProps>`
-  display: ${(props) => props.displayurl ?? "flex"};
-  align-items: center;
-  flex-flow: column wrap;
-  text-decoration: none;
-  > span {
-    padding: 5px 25px;
-    border-radius: 0.3em;
-    margin: 0 auto;
-    color: white;
+    display: ${(props) => props.displayurl ?? 'flex'};
+    align-items: center;
+    flex-flow: column wrap;
     text-decoration: none;
-    border: 1px solid white;
-  }
-  > img {
-    width: 45px;
-    height: 45px;
-    padding: 7px;
-  }
+    > span {
+        padding: 5px 25px;
+        border-radius: 0.3em;
+        margin: 0 auto;
+        color: white;
+        text-decoration: none;
+        border: 1px solid white;
+    }
+    > img {
+        width: 45px;
+        height: 45px;
+        padding: 7px;
+    }
 `;
 
 interface IProps extends IStory {
@@ -110,6 +111,7 @@ interface IProps extends IStory {
     displayurl: string;
     href: string;
     src: string;
+    story: any;
 }
 
 const Story: React.FunctionComponent<IProps> = (props) => {
@@ -121,32 +123,29 @@ const Story: React.FunctionComponent<IProps> = (props) => {
                 type="text"
                 placeholder="0"
                 style={{
-                    width: "100%",
-                    position: "absolute",
+                    width: '100%',
+                    position: 'absolute',
                     zIndex: 1,
-                    height: "20px",
-                    display: "none",
+                    height: '20px',
+                    display: 'none',
                 }}
             />
-            <Progress bar={props.bar} display={props.display}/>
+            <Progress bar={props.bar} display={props.display} />
             <StoryFooter>
-                <StoryTitle className={props.ani}>
-                    <h2>{props.mainCopy}</h2>
-                    <span>{props.subCopy}</span>
+                <StoryTitle isMobile={isMobile} className={props.ani}>
+                    <h2>{props.main_copy}</h2>
+                    <span>{props.sub_copy}</span>
                 </StoryTitle>
                 <StoryLink className={props.ani}>
                     <A href={props.href} displayurl={props.displayurl}>
-                        <img
-                            src={`${process.env.REACT_APP_ABSOLUTE_HOST}static/icons/ico_circle_arrow_up.png`}
-                            alt="화살표아이콘"
-                        />
+                        <img src={`/static/icons/ico_circle_arrow_up.png`} alt="화살표아이콘" />
                         <span>자세히보기</span>
                     </A>
                 </StoryLink>
             </StoryFooter>
             <div className="story_img">
-                <div className="overlay"/>
-                <img src={props.src} alt={props.alt}/>
+                <div className="overlay" />
+                {checkVideoImg(props.src, props.story)}
             </div>
         </StoryItem>
     );

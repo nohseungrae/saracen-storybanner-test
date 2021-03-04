@@ -1,3 +1,3 @@
-import SaraStoryContainer from "./SaraStoryContainer";
+import SaraStoryContainer from './SaraStoryContainer';
 
 export default SaraStoryContainer;
