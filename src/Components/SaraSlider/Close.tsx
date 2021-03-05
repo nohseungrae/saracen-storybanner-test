@@ -37,29 +37,21 @@ const CloseBox = styled.div<ISProps>`
 
 interface IProps {
     CloseStory: any;
+    display: string;
 }
 
-const Close: React.FunctionComponent<IProps> = ({ CloseStory }) => {
-    const [keyPressed, setKeyPressed] = useState(false);
-    const useKeyPress = (targetKey: any) => {
-        // console.log(targetKey)
-
-        document.onkeydown = (evt) => {
-            evt = evt || window.event;
-            if (evt.keyCode === targetKey) {
-                setKeyPressed(true);
+const Close: React.FunctionComponent<IProps> = ({ CloseStory, display }) => {
+    useEffect(() => {
+        const eventFunc = (e: any) => {
+            if (e.keyCode === 27) {
+                CloseStory();
             }
         };
-        useEffect(() => {
-            setKeyPressed(false);
-        }, [keyPressed]);
-    };
-    useKeyPress(27);
-    useEffect(() => {
-        if (keyPressed) {
-            CloseStory();
+        if (display === 'block') {
+            window.addEventListener('keydown', eventFunc);
         }
-    }, [keyPressed]);
+        return () => window.removeEventListener('keydown', eventFunc);
+    }, []);
 
     return <CloseBox isMobile={isMobile} onClick={CloseStory} />;
 };

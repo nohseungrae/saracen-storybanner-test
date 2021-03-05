@@ -35,6 +35,9 @@ const SaraLi = styled.li<ISProps>`
         border-radius: 0.7em;
         height: 100%;
     }
+    video {
+        border-radius: 0.7em;
+    }
 `;
 const Overlay = styled.img`
     position: absolute;
@@ -84,12 +87,21 @@ interface ICompare {
     seq: number;
     id: string;
 }
-export const checkVideoImg = (img: string, story: any) => {
+export const checkVideoImg = (img: string, story: any, value?: any) => {
     const mimeTypes = ['avi', 'mov', 'mp4', 'm4v', 'mpeg', 'mpg', 'oga', 'ogg', 'ogv', 'webm', 'wmv'];
     const mapping = mappingType(img) as { mimeType: string; name: string };
     if (mimeTypes.includes(mapping?.mimeType)) {
         return (
-            <video controlsList="nodownload" muted autoPlay playsInline loop style={{ width: '100%', height: '100%' }} src={img}></video>
+            <video
+                className={`story_video_${story.id}`}
+                controlsList="nodownload"
+                muted
+                autoPlay
+                playsInline
+                loop
+                style={{ width: '100%', height: '100%' }}
+                src={img}
+            ></video>
         );
     }
     return <img src={img} onError={(e: any) => imgPathFunc.solveImgError(e, story)} alt={story.alt} />;

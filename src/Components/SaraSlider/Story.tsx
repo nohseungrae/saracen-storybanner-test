@@ -112,6 +112,7 @@ interface IProps extends IStory {
     href: string;
     src: string;
     story: any;
+    duration: number;
 }
 
 const Story: React.FunctionComponent<IProps> = (props) => {
@@ -130,7 +131,7 @@ const Story: React.FunctionComponent<IProps> = (props) => {
                     display: 'none',
                 }}
             />
-            <Progress bar={props.bar} display={props.display} />
+            <Progress bar={props.bar} display={props.display} width={'100%'} duration={props.duration} />
             <StoryFooter>
                 <StoryTitle isMobile={isMobile} className={props.ani}>
                     <h2>{props.main_copy}</h2>
