@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ArrowBackIosSharpIcon from '@material-ui/icons/ArrowBackIosSharp';
 import ArrowForwardIosSharpIcon from '@material-ui/icons/ArrowForwardIosSharp';
 import Slider from 'react-slick';
@@ -261,32 +261,31 @@ interface IProps {
 
 const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, display, index, check, imgDomain, imgLegacy }) => {
     const [storyState, setStoryState] = useState({
-        slideIndex: index,
+        slideIndex: 0,
         stories,
         heartIndex: [],
     });
     const [state, setState] = useState<{
-        nav1: Slider | undefined;
-        nav2: Slider | undefined;
+        nav1: RefObject<Slider> | undefined;
+        nav2: RefObject<Slider> | undefined;
     }>({
         nav1: undefined,
         nav2: undefined,
     });
-
-    let slider: Slider;
-    let subSlide: Slider;
-    let timer: any;
+    const mySlider = useRef<Slider>(null);
+    const subSlider = useRef<Slider>(null);
 
     const videoFunc = (newI: number) => {
         const myVideo: any = document.querySelector(`.story_img .story_video_${storyState.stories[newI].id}`);
         return myVideo;
     };
+    const [delay, setDelay] = useState<number>(0);
 
     const settings = {
         dots: false,
         infinite: true,
         autoplay: true,
-        autoplaySpeed: storyState.stories[storyState.slideIndex].duration * 1000,
+        autoplaySpeed: storyState.stories[storyState.slideIndex]?.duration * 1000 + delay,
         speed: 300,
         slidesToShow: 1,
         slidesToScroll: 1,
@@ -296,16 +295,27 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
         initialSlide: storyState.slideIndex,
         beforeChange: (old: any, newI: number) => {
             const myVideo = videoFunc(newI);
-            console.log(old, newI, myVideo?.paused);
-            if (myVideo?.paused && old === newI) {
-                myVideo?.pause();
+            const t0 = performance.now();
+            // console.log(old, newI);
+
+            if (myVideo) {
+                myVideo.addEventListener(
+                    'loadeddata',
+                    () => {
+                        const t1 = performance.now();
+                        const loadingTime = Math.ceil(((t1 - t0) / 1000) % 60);
+                        setDelay(loadingTime);
+                    },
+                    true
+                );
+            } else {
+                setDelay(0);
+            }
+            if (!myVideo?.paused && old !== newI) {
+                myVideo?.load();
                 myVideo?.play();
             }
             if (myVideo?.paused && old !== newI) {
-                myVideo?.pause();
-                myVideo?.play();
-            }
-            if (!myVideo?.paused && old !== newI) {
                 myVideo?.load();
                 myVideo?.play();
             }
@@ -315,17 +325,12 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                 slideIndex: newI,
             });
         },
-        afterChange: (newI: number) => {
-            // setStoryState({
-            //     ...storyState,
-            //     slideIndex: newI,
-            // });
-        },
     };
 
     const handleSlideIndex = ({ target: { value } }: any) => {
-        console.log(value, 'slider handleSlideindex');
+        // console.log(value, 'slider handleSlideindex');
         const parsedVal = parseInt(value);
+        const slider = mySlider.current;
         slider?.slickGoTo(parsedVal);
         if (value !== '') {
             setStoryState({
@@ -358,8 +363,8 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
     };
     useEffect(() => {
         setState({
-            nav1: slider,
-            nav2: subSlide,
+            nav1: mySlider,
+            nav2: subSlider,
         });
     }, []);
     const usePrevValues = (value: any, callback: Function) => {
@@ -381,6 +386,7 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                 if (prevValues !== index) {
                     // console.log("서로 값이 다른 경우", "이전값 :", prevValues, "지금값 :", index);
                     const parsedIndex = index;
+                    const slider = mySlider.current;
                     slider?.slickGoTo(parsedIndex);
                     setStoryState({
                         ...storyState,
@@ -388,6 +394,7 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                     });
                 } else {
                     // console.log("값이 같은 경우", "이전값 :", prevValues, "지금값 :", index);
+                    const slider = mySlider.current;
                     const parsedIndex = index;
                     slider?.slickGoTo(parsedIndex);
                 }
@@ -407,8 +414,8 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                     <LeftSideBox>
                         <LeftSideContent>
                             <Slider
-                                asNavFor={state?.nav1}
-                                ref={(slider: Slider) => (subSlide = slider)}
+                                asNavFor={state?.nav1?.current as Slider}
+                                ref={subSlider}
                                 slidesToShow={stories.length}
                                 vertical={true}
                                 focusOnSelect={true}
@@ -419,7 +426,12 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                                         <ItemWrap className={'item_wrap'}>
                                             <ItemLeft>
                                                 <ItemLeftBox>
-                                                    {checkVideoImg(imgPathFunc.getImgPath(story, imgDomain, imgLegacy), story)}
+                                                    {checkVideoImg(
+                                                        imgPathFunc.getImgPath(story, imgDomain, imgLegacy),
+                                                        story,
+                                                        undefined,
+                                                        true
+                                                    )}
                                                 </ItemLeftBox>
                                             </ItemLeft>
                                             <ItemRight>
@@ -441,7 +453,7 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                 </LeftSide>
                 <TopSide />
                 <RightSide isMobile={isMobile}>
-                    <Slider asNavFor={state?.nav2} {...settings} ref={(slide: Slider) => (slider = slide)}>
+                    <Slider asNavFor={state?.nav2?.current as Slider} {...settings} ref={mySlider}>
                         {stories.map((story: any, i: number) => (
                             <React.Fragment key={i}>
                                 {/* {console.log(
@@ -452,6 +464,7 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                                     i === storyState.slideIndex ? 'block' : 'none'
                                 )} */}
                                 <Story
+                                    delay={delay}
                                     color={story.color}
                                     main_copy={story.main_copy}
                                     sub_copy={story.sub_copy}

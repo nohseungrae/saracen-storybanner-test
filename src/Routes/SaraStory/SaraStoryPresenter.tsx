@@ -54,12 +54,12 @@ const SaraStoryPresenter: React.FunctionComponent = () => {
         {
             admin_id: 0,
             alt: '3월의 출석체크',
-            back_img: null,
+            back_img: '33ee34d3928cbf5ee346e27e028bb270.jpg',
             back_img_pos: null,
             color: '#44c2bf',
             created_at: '2021-02-01 03:43:02',
             id: 1037,
-            img: 'ef41ff7089448cf3f2ac4c6818cb3c15.mp4',
+            img: '1bdffa2347a94dc2e30f1db9d2182d85.mp4',
             img_base64encoded: null,
             main_copy: '이번달도 출첵하소!',
             mini_img: null,
@@ -69,14 +69,14 @@ const SaraStoryPresenter: React.FunctionComponent = () => {
             type: 'sara_story',
             updated_at: '2021-03-01 00:00:02',
             url: 'https://thesaracen.com/event/detail/1996',
-            duration: 5,
+            duration: 29,
         },
         {
             admin_id: 0,
             alt: '3월의 출석체크',
             back_img: null,
             back_img_pos: null,
-            color: '#44c2bf',
+            color: '#000000',
             created_at: '2021-02-01 03:43:02',
             id: 1036,
             img: 'ef41ff7089448cf3f2ac4c6818cb3c15.mp4',
@@ -94,7 +94,7 @@ const SaraStoryPresenter: React.FunctionComponent = () => {
     ];
     return (
         <Stories
-            stories={window?.stories}
+            stories={window?.stories ?? stories}
             imgDomain={window?.img_domain ?? 'https://thesaracen-1304267401.cos.ap-seoul.myqcloud.com'}
             imgLegacy={window?.img_legacy ?? 'https://active.thesaracen.com'}
         />

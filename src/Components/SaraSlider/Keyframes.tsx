@@ -1,4 +1,4 @@
-import {keyframes} from "styled-components";
+import { keyframes } from 'styled-components';
 
 //----------------------------------------------------------
 export const Open = keyframes`
@@ -15,7 +15,7 @@ export const Open = keyframes`
     transform: scale(1);
     opacity: 1;
   }
-`
+`;
 //----------------------------------------------------------
 export const Title = keyframes`
   from {
@@ -30,7 +30,7 @@ export const Title = keyframes`
     margin-bottom: 60px;
     opacity: 1;
   }
-`
+`;
 //----------------------------------------------------------
 export const Links = keyframes`
   from {
@@ -41,7 +41,7 @@ export const Links = keyframes`
     transform: translate(0, 0);
     opacity: 1;
   }
-`
+`;
 //----------------------------------------------------------
 export const Heart = keyframes`
   from {
@@ -52,12 +52,12 @@ export const Heart = keyframes`
     transform: translate(50%, 0);
     opacity: 1;
   }
-`
+`;
 //----------------------------------------------------------
 export const Move = keyframes`
   from { width: 0; }
   to { width: 100%;}
-`
+`;
 //----------------------------------------------------------
 export const LogoAni = keyframes`
   from {
@@ -71,4 +71,4 @@ export const LogoAni = keyframes`
   to{
     opacity: 1;
   }
-`
+`;

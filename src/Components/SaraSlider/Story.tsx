@@ -113,6 +113,7 @@ interface IProps extends IStory {
     src: string;
     story: any;
     duration: number;
+    delay?: number;
 }
 
 const Story: React.FunctionComponent<IProps> = (props) => {
@@ -131,7 +132,7 @@ const Story: React.FunctionComponent<IProps> = (props) => {
                     display: 'none',
                 }}
             />
-            <Progress bar={props.bar} display={props.display} width={'100%'} duration={props.duration} />
+            <Progress delay={props.delay} bar={props.bar} display={props.display} duration={props.duration} />
             <StoryFooter>
                 <StoryTitle isMobile={isMobile} className={props.ani}>
                     <h2>{props.main_copy}</h2>
@@ -146,7 +147,7 @@ const Story: React.FunctionComponent<IProps> = (props) => {
             </StoryFooter>
             <div className="story_img">
                 <div className="overlay" />
-                {checkVideoImg(props.src, props.story)}
+                {checkVideoImg(props.src, props.story, undefined, false)}
             </div>
         </StoryItem>
     );

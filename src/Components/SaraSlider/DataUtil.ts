@@ -38,7 +38,16 @@ export const imgPathFunc = {
         e.target.src = 'https://thesaracen.com/static/info/404-page-not-found-2.png';
     },
 };
-
+export const getBackImgPath = (story: any, imgDomain: string, imgLegacy: string) => {
+    if (story.back_img) {
+        if (story['created_at'] >= '2021-01-19' || story['updated_at'] >= '2021-01-19') {
+            return `${imgDomain}/banner/${story?.back_img}`;
+        }
+        return `${imgLegacy}/img/banner/image/${story?.relation_id.toString()}/${story?.back_img}`;
+    } else {
+        return `https://thesaracen.com/static/info/404-page-not-found-2.png`;
+    }
+};
 export const mappingType = (filename: string) => {
     if (filename) {
         const splitName = filename?.split('.');

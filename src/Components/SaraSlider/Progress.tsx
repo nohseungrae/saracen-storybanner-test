@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { Move } from './Keyframes';
 
 interface SProps {
@@ -7,7 +7,12 @@ interface SProps {
     display?: string;
     bar?: string;
     duration?: number;
+    delay?: number;
 }
+const barAnimation = keyframes`
+    from { width : 0; }
+    to { width : 100%; }
+`;
 
 const ProgressContainer = styled.div<SProps>`
     width: ${(props) => props.width ?? '100%'};
@@ -29,16 +34,20 @@ const ProgressBar = styled.div<SProps>`
     height: 5px;
     line-height: 5px;
     border-radius: 1em;
-    width: ${(props) => props.bar};
+    width: 0;
     background-color: white;
     transition: width 0.1s ease;
-    animation: ${Move} ${(props) => props.duration}s ease-in-out;
+    animation-name: ${barAnimation};
+    animation-duration: ${(props) => props.duration}s;
+    animation-timing-function: ease-in-out;
+    animation-delay: ${(props) => props.delay ?? 0}s;
 `;
 
-const Progress: React.FunctionComponent<SProps> = ({ width, display, bar, duration }) => (
+const Progress: React.FunctionComponent<SProps> = ({ width, display, bar, duration, delay }) => (
     <>
+        {/* {console.log(display, duration, delay)} */}
         <ProgressContainer width={width} display={display} className={'progress_container'}>
-            <ProgressBar bar={bar + '%'} duration={duration} />
+            <ProgressBar bar={bar} duration={duration} delay={delay} />
         </ProgressContainer>
     </>
 );

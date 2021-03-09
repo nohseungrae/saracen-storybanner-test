@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import StorySlider from './StorySlider';
-import { DataUtil, imgPathFunc, mappingType } from './DataUtil';
+import { DataUtil, getBackImgPath, imgPathFunc, mappingType } from './DataUtil';
 import { clearAllBodyScrollLocks, disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
 import styled from 'styled-components';
 import { isMobile, isIE } from 'react-device-detect';
@@ -21,6 +21,7 @@ const SaraStory1 = styled.ul<ISProps>`
     ${(props) => (props.isMobile ? { padding: ' 0 3% 3% 3%' } : { padding: '30px 0 30px 40px', margin: 'auto' })};
     justify-content: center;
     flex-grow: 1;
+    flex-shrink: 0;
 `;
 const SaraLi = styled.li<ISProps>`
     ${(props) => (props.isMobile ? { width: '125px' } : { height: '350px' })};
@@ -87,18 +88,20 @@ interface ICompare {
     seq: number;
     id: string;
 }
-export const checkVideoImg = (img: string, story: any, value?: any) => {
+export const checkVideoImg = (img: string, story: any, value?: any, loop?: boolean) => {
     const mimeTypes = ['avi', 'mov', 'mp4', 'm4v', 'mpeg', 'mpg', 'oga', 'ogg', 'ogv', 'webm', 'wmv'];
     const mapping = mappingType(img) as { mimeType: string; name: string };
+    const backImg = getBackImgPath(story, 'https://thesaracen-1304267401.cos.ap-seoul.myqcloud.com', 'https://active.thesaracen.com');
     if (mimeTypes.includes(mapping?.mimeType)) {
         return (
             <video
                 className={`story_video_${story.id}`}
                 controlsList="nodownload"
+                poster={backImg}
                 muted
                 autoPlay
                 playsInline
-                loop
+                loop={loop}
                 style={{ width: '100%', height: '100%' }}
                 src={img}
             ></video>
@@ -156,8 +159,10 @@ const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegac
         displayState: 'none',
         slides: '',
         index: 0,
-        stories: [] as IStory[],
-        groupedStories: [] as any[],
+        stories,
+        groupedStories: DataUtil.jsonListGroupBy(stories, 'seq')
+            .flatMap((item: any) => item)
+            .sort(compare),
         targetElement: null,
     });
     const [check, setCheck] = useState(false);
@@ -193,22 +198,6 @@ const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegac
         return () => clearAllBodyScrollLocks();
     }, [targetEl]);
 
-    useEffect(() => {
-        if (stories?.length > 0) {
-            setState({
-                ...state,
-                displayState: 'none',
-                slides: '',
-                index: 0,
-                stories: stories,
-                groupedStories: DataUtil.jsonListGroupBy(stories, 'seq')
-                    .flatMap((item: any) => item)
-                    .sort(compare),
-                targetElement: null,
-            });
-        }
-    }, [stories]);
-
     useHorizontalScroll();
 
     return (
@@ -230,7 +219,7 @@ const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegac
                         <SaraLi color={story.color} isMobile={isMobile} key={i} onClick={(e) => handleOpenStory(e, i)}>
                             <Span>{story.alt}</Span>
                             <Overlay className="overlay" src={`/static/m/images/story_overlay.png`} alt="overlay" />
-                            {checkVideoImg(imgPathFunc.getImgPath(story, imgDomain, imgLegacy), story)}
+                            {checkVideoImg(imgPathFunc.getImgPath(story, imgDomain, imgLegacy), story, undefined, true)}
                         </SaraLi>
                     ))}
                 </SaraStory1>
