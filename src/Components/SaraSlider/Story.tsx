@@ -3,7 +3,6 @@ import Progress from './Progress';
 import { checkVideoImg, IStory } from './Stories';
 import styled from 'styled-components';
 import { Links, Open, Title } from './Keyframes';
-import { imgPathFunc } from './DataUtil';
 import { isMobile } from 'react-device-detect';
 
 interface SProps {

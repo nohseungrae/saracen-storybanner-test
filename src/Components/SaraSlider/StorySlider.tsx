@@ -8,7 +8,7 @@ import { Heart, LogoAni } from './Keyframes';
 import Close from './Close';
 import { imgPathFunc } from './DataUtil';
 import { isMobile, isIE } from 'react-device-detect';
-import { checkVideoImg } from './Stories';
+import { checkVideoImg, IStory } from './Stories';
 
 interface SProps {
     display?: string;
@@ -250,7 +250,7 @@ const StoryHeart = styled.div<SProps>`
 `;
 
 interface IProps {
-    stories: any[];
+    stories: IStory[];
     CloseStory: Function;
     display: string;
     index: number;
@@ -275,10 +275,10 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
     const mySlider = useRef<Slider>(null);
     const subSlider = useRef<Slider>(null);
 
-    const videoFunc = (newI: number) => {
+    const videoFunc = useCallback((newI: number) => {
         const myVideo: any = document.querySelector(`.story_img .story_video_${storyState.stories[newI].id}`);
         return myVideo;
-    };
+    }, []);
     const [delay, setDelay] = useState<number>(0);
 
     const settings = {
@@ -327,7 +327,7 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
         },
     };
 
-    const handleSlideIndex = ({ target: { value } }: any) => {
+    const handleSlideIndex = useCallback(({ target: { value } }: any) => {
         // console.log(value, 'slider handleSlideindex');
         const parsedVal = parseInt(value);
         const slider = mySlider.current;
@@ -338,9 +338,9 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
                 slideIndex: parsedVal,
             });
         }
-    };
+    }, []);
 
-    const handleAddHeart = (e: any, i: number) => {
+    const handleAddHeart = useCallback((e: any, i: number) => {
         e.preventDefault();
         const { target } = e;
         const heartBtn = target.parentElement;
@@ -360,7 +360,7 @@ const StorySlider: React.FunctionComponent<IProps> = ({ stories, CloseStory, dis
         setTimeout(() => cloneIcon.parentNode.removeChild(cloneIcon), 600);
 
         // TODO : Rest JS로 하트 하기
-    };
+    }, []);
     useEffect(() => {
         setState({
             nav1: mySlider,

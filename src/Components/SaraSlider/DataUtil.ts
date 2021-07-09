@@ -5,20 +5,21 @@ export const DataUtil = {
         return Object.fromEntries(Object.entries(list).map(func));
     },
 
-    jsonListGroupBy: (list: any[], key: string) => {
-        let groupedList: any[] = [];
+    jsonListGroupBy: (list: IStory[], key: keyof IStory) => {
+        let groupedList: IStory[] | any[] = [];
+        console.log(list);
 
         for (let item of list) {
-            if (typeof groupedList[item[key]] === 'undefined') {
-                groupedList[item[key]] = [];
+            if (typeof groupedList[item[key] as any] === 'undefined') {
+                groupedList[item[key] as any] = [];
             }
             if (!item.duration || item.duration === 0) {
                 item.duration = 6;
             }
-            groupedList[item[key]].push(item as never);
+            groupedList[item[key] as any].push(item as never);
         }
 
-        return groupedList;
+        return list;
     },
 };
 

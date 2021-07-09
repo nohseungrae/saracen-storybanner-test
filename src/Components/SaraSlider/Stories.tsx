@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import StorySlider from './StorySlider';
 import { DataUtil, getBackImgPath, imgPathFunc, mappingType } from './DataUtil';
 import { clearAllBodyScrollLocks, disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
 import styled from 'styled-components';
 import { isMobile, isIE } from 'react-device-detect';
+import { RefObject } from 'react';
 
 interface ISProps {
     isMobile: boolean;
@@ -11,20 +12,20 @@ interface ISProps {
 
 const StoryMain = styled.div`
     display: flex;
-    overflow-x: auto;
+    overflow: auto;
     max-width: 100%;
     margin: auto;
     -ms-overflow-style: none;
 `;
 const SaraStory1 = styled.ul<ISProps>`
     display: flex;
-    ${(props) => (props.isMobile ? { padding: ' 0 3% 3% 3%' } : { padding: '30px 0 30px 40px', margin: 'auto' })};
+    ${(props) => (props.isMobile ? { padding: ' 3% 3% 3% 3%' } : { padding: '30px 0 30px 40px', margin: 'auto' })};
     justify-content: center;
     flex-grow: 1;
     flex-shrink: 0;
 `;
 const SaraLi = styled.li<ISProps>`
-    ${(props) => (props.isMobile ? { width: '125px' } : { height: '350px' })};
+    ${(props) => (props.isMobile ? { width: '170px' } : { height: '338px' })};
     width: 194px;
     margin-right: 10px;
     position: relative;
@@ -57,20 +58,21 @@ const Span = styled.span`
 export interface IStory {
     adminId?: number;
     alt?: string;
-    backImg?: null | string;
-    backImgPos?: null | string;
+    back_img?: null | string;
+    back_img_pos?: null | string;
     color?: string;
     createdAt?: string | Date;
     id?: number;
     img?: string;
     main_copy?: string;
-    miniImg?: null;
+    mini_img?: null;
     relation_id?: number;
     seq?: number;
     sub_copy?: string;
     type?: string;
     updatedAt?: string | Date;
     url?: string;
+    duration?: number;
 }
 
 interface IProps {
@@ -91,7 +93,7 @@ interface ICompare {
 export const checkVideoImg = (img: string, story: any, value?: any, loop?: boolean) => {
     const mimeTypes = ['avi', 'mov', 'mp4', 'm4v', 'mpeg', 'mpg', 'oga', 'ogg', 'ogv', 'webm', 'wmv'];
     const mapping = mappingType(img) as { mimeType: string; name: string };
-    const backImg = getBackImgPath(story, 'https://thesaracen-1304267401.cos.ap-seoul.myqcloud.com', 'https://active.thesaracen.com');
+    const backImg = getBackImgPath(story, 'https://img.thesaracen.com', 'https://active.thesaracen.com');
     if (mimeTypes.includes(mapping?.mimeType)) {
         return (
             <video
@@ -133,44 +135,73 @@ export const compare = (a: ICompare, b: ICompare) => {
 };
 
 const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegacy }) => {
-    const elRef = useRef(null);
-    const useHorizontalScroll = () => {
-        useEffect(() => {
-            const el: any = elRef.current;
-            if (el) {
-                const onWheel = (e: any) => {
-                    e.preventDefault();
-                    if (!isIE) {
-                        return el?.scrollTo({
-                            left: el?.scrollLeft + e.deltaY,
-                        });
+    const elRef: RefObject<any> = useRef(null);
+    const body = document.querySelector('body') as HTMLBodyElement;
+
+    useEffect(() => {
+        //휠 이벤트 on/off
+
+        //클릭 시 휠 이벤트 off
+        // const eventGoSetting = (e: any) => {
+        //     window.localStorage.setItem('wheel', 'false');
+        //     e.stopPropagation();
+        // };
+        // const liveRoot = document.querySelector('#saralive_root');
+        // liveRoot?.addEventListener('click', eventGoSetting);
+        //-----------------------------------------------------
+
+        const el = elRef.current;
+
+        const onWheel = (e: any) => {
+            const wheel = window.localStorage.getItem('wheel');
+            const result = e.path
+                .map((p: any) => {
+                    if (p?.classList?.contains('view')) {
+                        return true;
                     }
-                    $(el).scrollLeft(el?.scrollLeft + e.deltaY);
-                };
-                el?.addEventListener('wheel', onWheel);
-                return () => el?.removeEventListener('wheel', onWheel);
+                    return false;
+                })
+                .filter((i: any) => i)
+                .shift();
+            if (wheel === 'false') {
+                return e.stopImmediatePropagation();
             }
-        }, []);
-        return elRef;
-    };
+            //
+            e.preventDefault();
+            if (!isIE) {
+                return el?.scrollTo({
+                    left: el?.scrollLeft + e.deltaY,
+                });
+            }
+            $(el).scrollLeft(el?.scrollLeft + e.deltaY);
+        };
+        el?.addEventListener('wheel', onWheel);
+        return () => {
+            el?.removeEventListener('wheel', onWheel);
+        };
+    });
+
     const [targetEl, setTargetEl] = useState<HTMLElement | null>(null);
+
+    const groupedStories = (stories: IStory[]) => {
+        return DataUtil.jsonListGroupBy(stories, 'seq')
+            .flatMap((item: any) => item)
+            .sort(compare);
+    };
 
     const [state, setState] = useState({
         displayState: 'none',
         slides: '',
         index: 0,
         stories,
-        groupedStories: DataUtil.jsonListGroupBy(stories, 'seq')
-            .flatMap((item: any) => item)
-            .sort(compare),
+        groupedStories: groupedStories(stories),
         targetElement: null,
     });
     const [check, setCheck] = useState(false);
 
-    const handleOpenStory = (e: any, i: number) => {
+    const handleOpenStory = useCallback((e: any, i: number) => {
         e.preventDefault();
         const parsedIndex = i;
-        const body: HTMLBodyElement | null = document.querySelector('body') as HTMLBodyElement;
         // console.log(body, parsedIndex);
         body.style.overflowY = 'hidden';
         setState({
@@ -180,10 +211,9 @@ const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegac
         });
         setCheck(true);
         disableBodyScroll(targetEl as HTMLElement);
-    };
+    }, []);
 
-    const handleCloseStory = () => {
-        const body: HTMLElement | null = document.querySelector('body') as HTMLBodyElement;
+    const handleCloseStory = useCallback(() => {
         body.style.overflowY = 'auto';
         setState({
             ...state,
@@ -191,14 +221,12 @@ const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegac
         });
         setCheck(false);
         enableBodyScroll(targetEl as HTMLElement);
-    };
+    }, []);
 
     useEffect(() => {
-        setTargetEl(document.querySelector('body') as HTMLBodyElement);
+        setTargetEl(body);
         return () => clearAllBodyScrollLocks();
-    }, [targetEl]);
-
-    useHorizontalScroll();
+    }, [body]);
 
     return (
         <>
@@ -215,7 +243,7 @@ const Stories: React.FunctionComponent<IProps> = ({ stories, imgDomain, imgLegac
             )}
             <StoryMain className="story" ref={elRef}>
                 <SaraStory1 isMobile={isMobile}>
-                    {state.groupedStories.map((story: any, i) => (
+                    {state.groupedStories.map((story: any, i: number) => (
                         <SaraLi color={story.color} isMobile={isMobile} key={i} onClick={(e) => handleOpenStory(e, i)}>
                             <Span>{story.alt}</Span>
                             <Overlay className="overlay" src={`/static/m/images/story_overlay.png`} alt="overlay" />
